@@ -4,15 +4,20 @@ from twython import Twython
 import random
 import re
 import sys
+import sqlite3
+import pandas as pd
 
-import config
 
-twitter = Twython(
-    config.TWITTER_CONSUMER_KEY,
-    config.TWITTER_CONSUMER_SECRET,
-    config.TWITTER_ACCESS_TOKEN,
-    config.TWITTER_ACCESS_SECRET
-)
+
+#Put you twitter api keys here:
+app_key = ""
+app_secret = ""
+oauth_token = ""
+oauth_token_secret = ""
+
+twitter = Twython(app_key, app_secret, oauth_token, oauth_token_secret)
+
+
 
 class MarkovChain(object):
     def __init__(self, documents, **kwargs):
@@ -60,11 +65,40 @@ class MarkovChain(object):
             tweet = self.generate_tweet()
         return tweet.strip()
 
+
+
+
+def read_sql_data(fileName):
+    con = sqlite3.connect('./data/database.sqlite')
+    e = pd.read_sql_query("SELECT p.Name Sender, ExtractedBodyText FROM Emails e INNER JOIN Persons p ON e.SenderPersonId=P.Id WHERE p.Name='Hillary Clinton' AND e.ExtractedBodyText != '' ORDER BY RANDOM()"  ,con)
+    cs = ""
+    for i in range(len(e.ExtractedBodyText)):
+        cs += e.ExtractedBodyText[i].encode('utf-8')
+    
+    file = open(fileName, "w")
+    file.write(cs)
+    
+
 def main():
-    with open(sys.argv[1]) as f:
+    fileName = sys.argv[1]
+    read_sql_data(fileName)
+    with open(fileName) as f:
         text = [line for line in f]
     tweet = MarkovChain(text).generate_tweet()
     twitter.update_status(status=tweet)
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
